@@ -1,0 +1,114 @@
+
+
+#include <Windows.h> 
+#include <winuser.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "graphics.h"
+#include "extgraph.h"
+#include "imgui.h"
+
+#define CURSOR 1
+
+double winwidth = 10.0, winheight = 10.0;   //窗口尺寸
+		double len; //记录某一行字符总长度(?)
+double CursorHeight;  //光标高度
+		char alltext[10000]; //记录所有字符
+		int alltextnum; //记录总字数(?)
+		int textnum; //记录总字符数
+		int everytextnum; //记录每一行字符数量(?)
+		int linenum; //总行数
+		int Now_x; //当前行的第x字符;
+		int Now_y; //当前是第几行
+		int Cnum; //某一行的汉语字符个数
+		int Enum; //某一行的非汉语字符个数
+
+		int ClickOrNot; //是否点击
+		int InputOrNot;//是否输入
+
+
+
+/*当前光标位置*/
+struct location
+{
+	double x;
+	double y;
+}cursorLocation;
+
+
+//将总字符分在每一行的结构体 
+struct everyrow
+{
+	int LineNum;   //每一行的行号
+	char row[10000];   //每一行的字符串
+}TextLines[50];//保存每一行的字符串 注意s
+
+//存某一行的字符串,链表
+struct  everyline
+{
+	char TextLine[1000];
+	struct stud_node* next;
+};
+struct everyline* head, * p, * tail;
+
+void display();
+void TimerEventProcess(int timerID);
+
+
+void Main() 
+{
+	SetWindowSize(winwidth, winheight);
+	InitGraphics();
+	//临时
+	cursorLocation.x = 5;
+	cursorLocation.y = 5;
+
+	registerTimerEvent(TimerEventProcess);
+	startTimer(CURSOR, 500);
+	display();
+}
+
+void display() //刷新
+{
+	
+
+	SetPenColor("Black");
+	SetPointSize(15);
+	SetFont("宋体");
+	CursorHeight = GetFontHeight();
+	//drawEditText();
+}
+
+void TimerEventProcess(int timerID)
+{
+	/*不在输入区，不显示 */
+	if (cursorLocation.y < 1)
+	{
+		return;
+	}
+
+	/* 控制光标的显示 */
+	static int n = 0;
+	if (n % 2 != 0)
+	{
+		/*控制显示*/
+		/*奇数次，不显示*/
+		DisplayClear();
+		display();
+		n++;
+	}
+	else
+	{
+		/*获取当前位置 */
+		double x = GetCurrentX();
+		double y = GetCurrentY();
+
+		/* 移动坐标*/
+		MovePen(cursorLocation.x, winheight - cursorLocation.y + 0.9 * CursorHeight);
+
+		/* 画光标*/
+		DrawLine(0, CursorHeight);
+		n++;
+	}
+}
