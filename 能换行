@@ -1,0 +1,284 @@
+
+
+#include <Windows.h> 
+#include <winuser.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "graphics.h"
+#include "extgraph.h"
+#include "imgui.h"
+
+#define CURSOR 1
+
+double winwidth = 10.0, winheight = 10.0;   //窗口尺寸
+double len; //记录某一行字符总长度(?)
+double CursorHeight;  //光标高度
+char alltext[10000] = ""; //记录所有字符
+int alltextnum = 0; //记录总字数(?)  打开文件之后似乎要初始化
+int textnum; //记录总字符数(遍历)
+int everytextnum; //记录每一行字符数量(?)
+int linenum; //总行数
+int Now_x = 0; //当前行的第x字符;
+int Now_y = 0; //当前是第几行
+int Cnum; //某一行的汉语字符个数
+int Enum; //某一行的非汉语字符个数
+bool isFirst = TRUE; //
+double InitY = -1;
+double distance = 2;
+int Max_Num = 10000; //最大字符数
+
+int ClickOrNot = 0; //是否点击
+int InputOrNot = 0;//是否输入
+
+
+
+/*当前光标位置*/
+struct location
+{
+	double x;
+	double y;
+}cursorLocation;
+
+
+//将总字符分在每一行的结构体 
+struct everyrow
+{
+	int LineNum;   //每一行的行号
+	char row[10000];   //每一行的字符串
+}TextLines[50];//保存每一行的字符串 注意s
+
+//存某一行的字符串,链表
+struct  everyline
+{
+	char TextLine[1000];
+	struct stud_node* next;
+};
+struct everyline* head, * p, * tail;
+
+//按顺序排列
+void display();
+void CharEventProcess(char ch);
+void TimerEventProcess(int timerID);
+void Get_location(); //Now_x Now_y
+void drawEditText(); //输出
+void convert(); //分装
+void counting(); //更新Enum, Cnum
+void LastChar(); //分装时处理最后一个字符
+
+void Main()
+{
+	SetWindowSize(winwidth, winheight);
+	InitGraphics();
+	//临时
+	cursorLocation.x = 2;
+	cursorLocation.y = 2;
+	SetPointSize(20); //字体大小
+
+	registerTimerEvent(TimerEventProcess);
+	registerCharEvent(CharEventProcess);
+	startTimer(CURSOR, 500);
+	display();
+}
+
+void display() //刷新
+{
+
+
+	SetPenColor("Black");
+	SetPointSize(20);
+	SetFont("宋体");
+	CursorHeight = GetFontHeight();
+	drawEditText();
+}
+
+void CharEventProcess(char ch)
+{
+	uiGetChar(ch);  //在imgui.c 252行
+	InputOrNot = 1;
+
+	if (ch > 0 && ch <= 26) {
+		display();
+		//InitConsole();
+		//printf("这里%s\n", alltext);
+		//FreeConsole();
+	}
+
+	/*删除*/
+	if (ch == VK_BACK) {
+		//InitConsole();
+		//printf("This is delete");
+		//FreeConsole();
+	}
+
+	/*换行*/
+	if (ch == VK_RETURN || ch == 10) {
+		Now_x = 0; //第0个字符;
+		Now_y ++;  //当前所在行
+		//ChangeLine();
+	}
+	switch (ch) 
+	{
+		case VK_ESCAPE:
+			exit(-1);
+		default:
+			alltext[alltextnum++] = ch;
+			alltext[alltextnum] = '\0';
+
+			display();
+			break;
+	}
+		
+}
+
+
+
+
+void TimerEventProcess(int timerID)
+{
+	/*不在输入区，不显示 */
+	if (cursorLocation.y < 1)
+	{
+		return;
+	}
+
+	/* 控制光标的显示 */
+	static int n = 0;
+	if (n % 2 != 0)
+	{
+		/*控制显示*/
+		/*奇数次，不显示*/
+		DisplayClear();
+		display();
+		n++;
+	}
+	else
+	{
+		/*获取当前位置 */
+		double x = GetCurrentX();
+		double y = GetCurrentY();
+
+		/* 移动坐标*/
+		MovePen(cursorLocation.x, winheight - cursorLocation.y + 0.9 * CursorHeight);
+
+		/* 画光标*/
+		DrawLine(0, CursorHeight);
+		n++;
+	}
+}
+
+void Get_location()
+{
+	Now_y = linenum;
+	Now_x = strlen(TextLines[Now_y].row);
+}
+
+void drawEditText() {
+	if (isFirst) {
+		InitY = 10 - distance;
+		//InitConsole();
+		//printf("this is InitY:%lf\n", InitY);
+		isFirst = FALSE;
+	}
+	double fH = GetFontHeight();
+
+	//分装
+	convert();
+	
+	//确定输出位置
+	int i;
+	for (i = 0; i <= linenum; i++) {
+		MovePen(0, InitY - fH * i);
+		if (GetCurrentY() > 10 - distance) {
+			continue;
+		}
+		//DrawTextString(alltext);
+		DrawTextString(TextLines[i].row);
+	}
+}
+
+//分装
+void convert() 
+{
+	/*初始化*/
+	{
+		linenum = 0;  
+		textnum = 0;
+		everytextnum = 0;
+		len = 0;  //某一行字符长度(图形长度)
+		int k;
+		for (k = 0; k < 50; k++)
+		{
+			TextLines[k].row[0] = '\0';   //50行都设置为空
+		}
+	}
+
+	alltextnum = strlen(alltext);
+
+	while (textnum < alltextnum) //已经转移的字符<总字符
+	{
+		TextLines[linenum].row[everytextnum] = alltext[textnum];
+		textnum++;
+		everytextnum++;
+		TextLines[linenum].row[everytextnum] = '\0';
+		len = TextStringWidth(TextLines[linenum].row);
+
+		//连续换行  
+		while (alltext[textnum] == '\n' && len < winwidth - 0.1)
+		{
+			TextLines[linenum].row[everytextnum] = '\n';
+			TextLines[linenum].row[everytextnum + 1] = '\0';
+			textnum++;
+			len = 0;   //换行后长度为0
+			linenum++; //行数+1
+			everytextnum = 0; //该行字符数为0 
+		}
+
+		//最后一个字符快要接近末尾
+		if (len >= winwidth - 0.5)  
+		{
+			counting();  //更新Enum,Cnum 
+			LastChar();
+			len = 0;
+			linenum++;
+			everytextnum = 0;
+		}
+
+
+
+
+	}
+}
+
+void counting() 
+{
+	Enum = 0;
+	Cnum = 0;
+	int num = strlen(TextLines[linenum].row); //遍历所有字符
+	int i;
+	for (i = 0; i < num; i++)
+	{
+		if (TextLines[linenum].row[i] >= 0 && TextLines[linenum].row[i] <= 127)
+		{
+			Enum++;
+		}
+		else
+		{
+			Cnum++;
+		}
+	}
+}
+
+void LastChar()
+{
+	char lastone = TextLines[linenum].row[everytextnum - 1];
+	if (lastone >= 0 || Cnum % 2 == 0)   //不是中文
+	{
+		TextLines[linenum].row[everytextnum] = '\0';
+	}
+	else
+	{
+		TextLines[linenum].row[everytextnum - 1] = '\0';
+		textnum--;
+	}
+}
