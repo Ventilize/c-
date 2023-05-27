@@ -32,8 +32,8 @@ int Max_Num = 10000; //最大字符数
 
 int ClickOrNot = 0; //是否点击
 int InputOrNot = 0;//是否输入
-int nowflag = 1;
-int flag = 1;
+int nowflag = 1; //废弃
+int flag = 1; //废弃
 
 
 /*当前光标位置*/
@@ -80,6 +80,7 @@ int CountNowNum();
 void Delete();
 void Delete_E();
 void Delete_C();
+void Delete_break();
 
 
 
@@ -125,10 +126,8 @@ void CharEventProcess(char ch)
 
 	/*删除*/
 	if (ch == VK_BACK) {
-		//InitConsole();
-		//printf("This is delete");
-		//FreeConsole();
 		Delete();
+		return;
 	}
 
 	/*换行*/
@@ -144,27 +143,6 @@ void CharEventProcess(char ch)
 		if (ch == VK_ESCAPE) exit(-1); //?把这句话删了就不行了???
 		else 
 		{
-
-			/*
-
-			if (flag) {
-				Last_location();
-				flag = 0;
-
-			}
-			else {
-				int k = CountNowNum();
-				char Swap1 = alltext[k];
-				char Swap2;
-				alltext[k] = ch;
-				while (Swap1 != '\0')
-				{
-					Swap2 = alltext[k + 1];
-					alltext[k + 1] = Swap1;
-					k++;
-					Swap1 = Swap2;
-				}
-			*/
 			int k = CountNowNum();
 			char Swap1 = alltext[k];
 			char Swap2;
@@ -381,6 +359,7 @@ void KeyboardEventProcess(int key, int event)
 void TurnBack() 
 {
 	/*最左边的处理*/
+	if (Now_x == 0)return;
 	if ((Now_x == 1) && (TextLines[Now_y].row[Now_x - 1] > 0) ) {
 		Now_x = 0;
 		return;
@@ -509,7 +488,7 @@ void Delete()
 	/*换行符的删除*/
 	if (Now_x == 0 && TextLines[Now_y - 1].row[strlen(TextLines[Now_y - 1].row) - 1] == '\n')
 	{
-		//Delete_break();
+		Delete_break();
 	}
 	/*非中文的删除*/
 	else if (Now_x - 1 < 0 || TextLines[Now_y].row[Now_x - 1] >= 1 && TextLines[Now_y].row[Now_x - 1] <= 127)
@@ -590,6 +569,27 @@ void Delete_C()
 	while (alltext[sum] != '\0')
 	{
 		alltext[sum] = alltext[sum + 2];
+		sum++;
+	}
+	alltext[sum] = '\0';
+}
+
+/*换行符的删除*/
+void Delete_break() 
+{
+	int i;
+	int sum = 0;
+	Now_y--;
+	for (i = 0; i < Now_y; i++)
+	{
+		sum = sum + strlen(TextLines[i].row);
+	}
+	Now_x = strlen(TextLines[Now_y].row);
+	Now_x--;
+	sum = sum + Now_x;
+	while (alltext[sum] != '\0')
+	{
+		alltext[sum] = alltext[sum + 1];
 		sum++;
 	}
 	alltext[sum] = '\0';
