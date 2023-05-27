@@ -1,4 +1,6 @@
 /*bug: 删除最后一个字符之后不能保留这一行*/
+/*bug:先移动光标,后删除*/
+/*bug: 换行删除操作,需要按两次删除*/
 
 #include <Windows.h> 
 #include <winuser.h>
