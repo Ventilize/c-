@@ -14,20 +14,20 @@
 #define CURSOR 1
 
 double winwidth = 10.0, winheight = 10.0;   //窗口尺寸
-double len; //记录某一行字符总长度(?)
+double len; //记录某一行字符总长度
 double CursorHeight;  //光标高度
-char alltext[10000] = ""; //记录所有字符
-int alltextnum = 0; //记录总字数(?)  打开文件之后似乎要初始化
+char alltext[10000] = ""; //记录所有字符,打开文件需要重新初始化这个数组!!
+int alltextnum = 0; //记录存在的总字数  打开文件之后似乎要初始化!!
 int textnum; //记录总字符数(遍历)
-int everytextnum; //记录每一行字符数量(?)
+int everytextnum; //记录每一行字符数量
 int linenum; //总行数
 int Now_x = 0; //当前行的第x字符;
 int Now_y = 0; //当前是第几行
 int Cnum; //某一行的汉语字符个数
 int Enum; //某一行的非汉语字符个数
-bool isFirst = TRUE; //
+bool isFirst = TRUE; //废弃
 double InitY = -1;
-double distance = 2;
+double distance = 2; //调整第一行字与上边框的距离
 int Max_Num = 10000; //最大字符数
 
 int ClickOrNot = 0; //是否点击
@@ -59,7 +59,7 @@ struct  everyline
 };
 struct everyline* head, * p, * tail;
 
-//按顺序排列
+//所有用到的函数
 void display();
 void CharEventProcess(char ch);
 void TimerEventProcess(int timerID);
@@ -68,6 +68,7 @@ void drawEditText(); //输出
 void convert(); //分装
 void counting(); //更新Enum, Cnum
 void LastChar(); //分装时处理最后一个字符
+
 void KeyboardEventProcess(int key, int event);
 void TurnBack();
 void TurnForward();
@@ -82,9 +83,7 @@ void Delete_E();
 void Delete_C();
 void Delete_break();
 
-
-
-
+/*正文从这里开始*/
 void Main()
 {
 	SetWindowSize(winwidth, winheight);
